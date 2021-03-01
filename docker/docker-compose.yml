@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  letaipays:
+    restart: on-failure
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - 8090:8090
+    environment:
+      - PORT=8090
+      - DIAG_PORT=8091
+    extra_hosts:
+      - "redishost:192.168.143.253"
+    volumes:
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "300m"
+        max-file: "10"
+#    networks:
+#      - wifi_auth
