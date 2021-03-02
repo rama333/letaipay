@@ -1,12 +1,12 @@
 package tgbot
 
 import (
-	"letaipays/entity"
 	"errors"
 	tgbotapi "github.com/Syfaro/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 	"image/jpeg"
 	"barcode"
+	"letaipays/internal/entity"
 	"net/http"
 	"strconv"
 	"strings"
