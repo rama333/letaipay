@@ -70,6 +70,7 @@ func (s *Storage) AddUserNameDealer(userId int,nameDealer string) (error)  {
 }
 
 
+
 func (s * Storage) GetUser(user_id int) (u entity.User, err error) {
 	err = s.db.QueryRowx(`select * from users where user_id = $1`, user_id).StructScan(&u)
 

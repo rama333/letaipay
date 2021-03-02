@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/bieber/barcode.v0"
+	"letaipays/config"
 	"letaipays/pg"
 	"letaipays/tgbot"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-var token = "1616574093:AAGmVjKIQ5CYAWrU7bBD6uwgOwS7d_kAJq0"
+
 
 func main() {
 
@@ -25,7 +26,9 @@ func main() {
 		logrus.Info("shutdown time - %s", time.Now().Sub(st))
 	}()
 
-	db, err := pg.NewStorage("host=192.168.143.179 user=letaipays password=Sk18sxsFV1#B712XC dbname=test sslmode=disable")
+	config := config.LoadConfig()
+
+	db, err := pg.NewStorage(config.POSTGRES_URL)
 
 	if err != nil {
 		logrus.Panic(err)
@@ -35,7 +38,7 @@ func main() {
 
 	scanner := barcode.NewScanner()
 
-	_, err = tgbot.NewBot(token, db, scanner)
+	_, err = tgbot.NewBot(config.TGTOKEN, db, scanner)
 
 	if err != nil {
 		logrus.Panic(err)
