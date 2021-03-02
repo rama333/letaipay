@@ -74,7 +74,8 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 				err := dbstorage.AddUserFullName(update.Message.From.ID, update.Message.Text)
 
 				if err != nil {
-					s.log.Panic(err)
+					s.log.Info(err)
+					continue
 				}
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из какой ты компании?  (ООО/ИП «Наименование»)")
@@ -93,7 +94,8 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 				err := dbstorage.AddUserNameDealer(update.Message.From.ID, update.Message.Text)
 
 				if err != nil {
-					s.log.Panic(err)
+					s.log.Info(err)
+					continue
 				}
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Напиши мне номер договора, который ты подписал с нами чтобы я знал куда перевести деньги!")
@@ -117,7 +119,8 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 				err := dbstorage.AddUserNumberGph(update.Message.From.ID, update.Message.Text)
 
 				if err != nil {
-					s.log.Panic(err)
+					s.log.Info(err)
+					continue
 				}
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Поздравляю, теперь вперед к продажам! (жду фото с imsi)")
@@ -149,6 +152,7 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 		resp, err := bot.GetFile(tgbotapi.FileConfig{photo[1].FileID})
 		if err != nil {
 			logrus.Info(err)
+			continue
 		}
 
 		logrus.Info(resp.FilePath)
@@ -158,12 +162,10 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 		if err != nil {
 			logrus.Info(err)
+			continue
 		}
 
 		defer req.Body.Close()
-
-		logrus.Info(req.Status)
-		logrus.Info(req.Request.RequestURI)
 
 		src, err := jpeg.Decode(req.Body)
 
