@@ -60,7 +60,6 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 			continue
 		}
 
-		//var user entity.User
 		user, err := dbstorage.GetUser(update.Message.From.ID)
 
 		if err != nil {
@@ -69,12 +68,7 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 		if user.Full_name == "" {
 
-			//panic(user.Full_name)
 			sp := strings.Split(update.Message.Text, " ")
-			//unicode.Is(unicode.Cyrillic, rune(user.Full_name)
-
-			//logrus.Info(sp[2])
-			//logrus.Panic(len(sp))
 
 			if utf8.RuneCountInString(update.Message.Text) > 8 && len(sp) == 3 {
 				err := dbstorage.AddUserFullName(update.Message.From.ID, update.Message.Text)
@@ -139,8 +133,6 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 		}
 
-		//msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-
 		logrus.Infof("[%s], %s", update.Message.From.UserName, update.Message.Text)
 
 		logrus.Info(update.Message.From.ID)
@@ -191,12 +183,6 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 		state := false
 
 		for _, s := range r {
-			logrus.Info(s.Data)
-
-			logrus.Println("-----------")
-			logrus.Info(s.Type)
-			logrus.Info(s.Type.Name())
-			logrus.Println("-----------")
 
 			if s.Type.Name() != "CODE-128" {
 				continue
