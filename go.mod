@@ -9,4 +9,5 @@ require (
 	github.com/sirupsen/logrus v1.8.0
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	gocv.io/x/gocv v0.26.0
+	gopkg.in/bieber/barcode.v0 v0.0.0-20150426000244-ea9099fd9d91
 )

@@ -7,13 +7,15 @@ RUN cd /m && go mod download
 # Intermediate stage: Build the binary
 FROM golang:1.15 as builder
 
-COPY --from=modules ./go/pkg /go/pkg
+COPY --from=modules ./pkg /go/pkg
 
 # add a non-privileged user
 RUN useradd -u 10001 letaipays
 
 RUN mkdir -p /letaipays
 ADD . /letaipays
+
+RUN ls -l
 
 WORKDIR /letaipays
 

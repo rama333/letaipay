@@ -4,15 +4,14 @@ import (
 	"errors"
 	tgbotapi "github.com/Syfaro/telegram-bot-api"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/bieber/barcode.v0"
 	"image/jpeg"
-	"barcode"
-	"letaipays/internal/entity"
+	"letaipays/entity"
 	"net/http"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 )
-
 
 var numericKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
@@ -21,33 +20,32 @@ var numericKeyboard = tgbotapi.NewReplyKeyboard(
 )
 
 type DBStorage interface {
-	AddUserFullName(user_id int,fullname string) (error)
-	AddUserNumberGph(user_id int,numberGph string) (error)
-	AddUserNameDealer(user_id int,nameDealer string) (error)
+	AddUserFullName(user_id int, fullname string) error
+	AddUserNumberGph(user_id int, numberGph string) error
+	AddUserNameDealer(user_id int, nameDealer string) error
 	GetUser(user_id int) (u entity.User, err error)
-	AddImsi(userId int, imsi string) (error)
+	AddImsi(userId int, imsi string) error
 	GetImsi(imsi string) (u entity.Imsi, err error)
 }
 
 type Tgbot struct {
 	//botApi *tgbotapi.BotAPI
-	dbstorage DBStorage
+	dbstorage    DBStorage
 	imagescanner *barcode.ImageScanner
-	log *logrus.Entry
+	log          *logrus.Entry
 }
 
-func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanner) (*Tgbot, error)  {
+func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanner) (*Tgbot, error) {
 
 	s := &Tgbot{
-		dbstorage: dbstorage,
+		dbstorage:    dbstorage,
 		imagescanner: imagescanner,
-		log: logrus.WithField("system", "bot"),
+		log:          logrus.WithField("system", "bot"),
 	}
-
 
 	bot, err := tgbotapi.NewBotAPI(token)
 
-	if err != nil{
+	if err != nil {
 		return nil, errors.New("open bot api:" + err.Error())
 	}
 
@@ -57,8 +55,6 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 	updates, err := bot.GetUpdatesChan(ucfg)
 
-
-
 	for update := range updates {
 		if update.Message == nil {
 			continue
@@ -67,11 +63,11 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 		//var user entity.User
 		user, err := dbstorage.GetUser(update.Message.From.ID)
 
-		if err != nil{
+		if err != nil {
 			s.log.Info(err)
 		}
 
-		if user.Full_name == ""{
+		if user.Full_name == "" {
 
 			//panic(user.Full_name)
 			sp := strings.Split(update.Message.Text, " ")
@@ -80,95 +76,93 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 			//logrus.Info(sp[2])
 			//logrus.Panic(len(sp))
 
-			if utf8.RuneCountInString(update.Message.Text) > 8 && len(sp) == 3{
+			if utf8.RuneCountInString(update.Message.Text) > 8 && len(sp) == 3 {
 				err := dbstorage.AddUserFullName(update.Message.From.ID, update.Message.Text)
 
-				if err != nil{
+				if err != nil {
 					s.log.Panic(err)
 				}
 
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "название дилера")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из какой ты компании?  (ООО/ИП «Наименование»)")
 				bot.Send(msg)
 
 				continue
 			}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "как вас зовут")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет! Я чат-бот Letaipays, а как тебя зовут? (Иванов Иван Иванович)")
 			bot.Send(msg)
 			continue
 		}
 
-		if user.Name_dealer == ""{
+		if user.Name_dealer == "" {
 			if utf8.RuneCountInString(update.Message.Text) > 5 {
 				err := dbstorage.AddUserNameDealer(update.Message.From.ID, update.Message.Text)
 
-				if err != nil{
+				if err != nil {
 					s.log.Panic(err)
 				}
 
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "номер договора")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Напиши мне номер договора, который ты подписал с нами чтобы я знал куда перевести деньги!")
 				bot.Send(msg)
 
 				continue
 			}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "название дилера")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из какой ты компании?  (ООО/ИП «Наименование»)")
 			bot.Send(msg)
 
 			continue
 
 		}
 
-		if user.Number_gph == 0{
+		if user.Number_gph == 0 {
 
-			_, err := strconv.ParseInt(update.Message.Text, 10,32)
+			_, err := strconv.ParseInt(update.Message.Text, 10, 32)
 
-			if utf8.RuneCountInString(update.Message.Text) > 5 && err == nil{
+			if utf8.RuneCountInString(update.Message.Text) > 5 && err == nil {
 				err := dbstorage.AddUserNumberGph(update.Message.From.ID, update.Message.Text)
 
-				if err != nil{
+				if err != nil {
 					s.log.Panic(err)
 				}
 
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "успешно авторизовались")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Поздравляю, теперь вперед к продажам! (жду фото с imsi)")
 				bot.Send(msg)
 
 				continue
 			}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "номер договора")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Напиши мне номер договора, который ты подписал с нами чтобы я знал куда перевести деньги!")
 			bot.Send(msg)
 
 			continue
 
 		}
 
-
 		//msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-
 
 		logrus.Infof("[%s], %s", update.Message.From.UserName, update.Message.Text)
 
 		logrus.Info(update.Message.From.ID)
 
-		if update.Message.Photo == nil{
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "в работе жду фото imsi")
+		if update.Message.Photo == nil {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "жду фото imsi")
 			msg.ReplyMarkup = numericKeyboard
 			bot.Send(msg)
 			continue
 		}
 
-		photo:=*update.Message.Photo
+		photo := *update.Message.Photo
 		logrus.Info(photo[1].FileID)
-		resp ,err := bot.GetFile(tgbotapi.FileConfig{photo[1].FileID})
-		if err != nil{
+		resp, err := bot.GetFile(tgbotapi.FileConfig{photo[1].FileID})
+		if err != nil {
 			logrus.Info(err)
 		}
 
 		logrus.Info(resp.FilePath)
 
-		req, err := http.Get("https://api.telegram.org/file/bot"+token+"/"+resp.FilePath)
-		logrus.Info("https://api.telegram.org/file/bot"+token+"/"+resp.FilePath + "/")
+		req, err := http.Get("https://api.telegram.org/file/bot" + token + "/" + resp.FilePath)
+		logrus.Info("https://api.telegram.org/file/bot" + token + "/" + resp.FilePath + "/")
 
 		if err != nil {
 			logrus.Info(err)
@@ -176,13 +170,12 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 		defer req.Body.Close()
 
-
 		logrus.Info(req.Status)
 		logrus.Info(req.Request.RequestURI)
 
 		src, err := jpeg.Decode(req.Body)
 
-		if err != nil{
+		if err != nil {
 			logrus.Info(err)
 		}
 
@@ -191,14 +184,13 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 		img := barcode.NewImage(src)
 
 		r, err := scanner.ScanImage(img)
-		if err != nil{
+		if err != nil {
 			logrus.Info(err)
 		}
 
-
 		state := false
 
-		for _,s := range r{
+		for _, s := range r {
 			logrus.Info(s.Data)
 
 			logrus.Println("-----------")
@@ -206,18 +198,18 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 			logrus.Info(s.Type.Name())
 			logrus.Println("-----------")
 
-			if s.Type.Name() != "CODE-128"{
+			if s.Type.Name() != "CODE-128" {
 				continue
 			}
 
 			imsi, err := dbstorage.GetImsi(s.Data)
 
-			if err != nil{
+			if err != nil {
 				logrus.Info(err)
 			}
 
-			if imsi.Imsi != ""{
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "данный imsi -" + s.Data + " был  добавлен ранее")
+			if imsi.Imsi != "" {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "данный imsi -"+s.Data+" был  добавлен ранее")
 				msg.ReplyMarkup = numericKeyboard
 				bot.Send(msg)
 				state = true
@@ -226,13 +218,13 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 			err = dbstorage.AddImsi(update.Message.From.ID, s.Data)
 
-			if err != nil{
+			if err != nil {
 				logrus.Error(err)
 			}
 
 			state = true
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, s.Data + " - успешнор добавлен")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, s.Data+" - успешнор добавлен")
 			msg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(msg)
 
@@ -249,5 +241,3 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 
 	return s, nil
 }
-
-
