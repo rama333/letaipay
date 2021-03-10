@@ -2,7 +2,8 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"gopkg.in/bieber/barcode.v0"
+	//"gopkg.in/bieber/barcode.v0"
+	"letaipays/pkg/barcode"
 	"letaipays/config"
 	"letaipays/pg"
 	"letaipays/tgbot"
@@ -11,8 +12,6 @@ import (
 	"syscall"
 	"time"
 )
-
-
 
 func main() {
 
