@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	_ "github.com/lib/pq"
 	"letaipays/entity"
+	"time"
 )
 
 type Storage struct {
@@ -31,7 +32,6 @@ func NewStorage(url string) (*Storage, error)  {
 		return nil, errors.New("open db:" + err.Error())
 	}
 
-	logrus.Info("okokoko")
 
 return &Storage{
 	url: url,
@@ -46,13 +46,13 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) AddImsi(userId int, imsi string) (error)  {
-	_,err := s.db.Exec(`insert into data_imsi (user_id, imsi) values ($1, $2)`, userId, imsi)
+	_,err := s.db.Exec(`insert into data_imsi (user_id, imsi,date) values ($1, $2,$3)`, userId, imsi, time.Now())
 
 	return err
 }
 
 func (s *Storage) AddUserFullName(userId int,fullname string) (error)  {
-	_,err := s.db.Exec(`insert into users (user_id, full_name, number_gph, name_dealer) values ($1, $2, $3, $4)`, userId, fullname, 0, "" )
+	_,err := s.db.Exec(`insert into users (user_id, full_name, number_gph, name_dealer, date, city) values ($1, $2, $3, $4, $5, $6)`, userId, fullname, 0, "", time.Now(), "")
 
 	return err
 }
@@ -69,7 +69,11 @@ func (s *Storage) AddUserNameDealer(userId int,nameDealer string) (error)  {
 	return err
 }
 
+func (s *Storage) AddUserCity(userId int,city string) (error)  {
+	_,err := s.db.Exec(`update users set city = $1 where user_id = $2`, city, userId)
 
+	return err
+}
 
 func (s * Storage) GetUser(user_id int) (u entity.User, err error) {
 	err = s.db.QueryRowx(`select * from users where user_id = $1`, user_id).StructScan(&u)
@@ -77,6 +81,19 @@ func (s * Storage) GetUser(user_id int) (u entity.User, err error) {
 	if err == sql.ErrNoRows{
 		err = entity.ErrUserNotFound
 	}
+
+	return
+}
+
+
+func (s * Storage) GetAllData() (u []entity.DataAll, err error) {
+	err = s.db.Select(&u,`select d."date", d.imsi, u.user_id, u.number_gph, u.full_name, u.city, d.state, u.name_dealer from users as u join data_imsi as d on u.user_id = d.user_id`)
+
+	return
+}
+
+func (s * Storage) GetAllDataWithUser(userId int) (u []entity.DataAll, err error) {
+	err = s.db.Select(&u,`select d."date", d.imsi, u.user_id, u.number_gph, u.full_name, u.city, d.state, u.name_dealer from users as u join data_imsi as d on u.user_id = d.user_id where d.user_id =$1`, userId)
 
 	return
 }
