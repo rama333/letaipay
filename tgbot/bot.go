@@ -12,10 +12,10 @@ import (
 
 	//tgbotapi "github.com/Syfaro/telegram-bot-api"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/bieber/barcode.v0"
+	//"gopkg.in/bieber/barcode.v0"
 	"image/jpeg"
 	"letaipays/entity"
-	//"letaipays/pkg/barcode"
+	"letaipays/pkg/barcode"
 	"net/http"
 	"strings"
 	"unicode/utf8"

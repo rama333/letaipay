@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"gopkg.in/bieber/barcode.v0"
-	//"letaipays/pkg/barcode"
+	"letaipays/api"
+
+	//"gopkg.in/bieber/barcode.v0"
+	"letaipays/pkg/barcode"
 	"letaipays/config"
 	"letaipays/pg"
 	"letaipays/tgbot"
@@ -34,6 +36,13 @@ func main() {
 	}
 
 	defer db.Close()
+
+
+	_, err = api.NewServer(db, "7090")
+
+	if err != nil{
+		logrus.Panic(err)
+	}
 
 	scanner := barcode.NewScanner()
 
