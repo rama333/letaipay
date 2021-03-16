@@ -38,11 +38,16 @@ func main() {
 	defer db.Close()
 
 
-	_, err = api.NewServer(db, "7090")
+	server, err := api.NewServer(db, "7090")
 
 	if err != nil{
 		logrus.Panic(err)
 	}
+
+	defer func() {
+		server.Stop()
+		logrus.WithField("main", "server graceful stopped")
+	}()
 
 	scanner := barcode.NewScanner()
 

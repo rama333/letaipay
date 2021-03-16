@@ -1,11 +1,13 @@
 package api
 
 import (
-	"fmt"
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"letaipays/entity"
+	"net/http"
 	"sync"
+	"time"
 )
 
 type DBStorage interface {
@@ -27,6 +29,7 @@ type Server struct {
 	wg sync.WaitGroup
 	gin *gin.Engine
 	port string
+	httpServer *http.Server
 }
 
 func NewServer(storage DBStorage, port string) (*Server, error)  {
@@ -38,17 +41,28 @@ func NewServer(storage DBStorage, port string) (*Server, error)  {
 
 	s.stop = make(chan struct{})
 
-	r := gin.New()
+	router := gin.New()
 
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
-	v1 := r.Group("api/v1")
+	routerGroupv1 := router.Group("api/v1")
 	{
-		v1.GET("reports", s.GetReports)
+		routerGroupv1.GET("reports", s.GetReports)
+		routerGroupv1.POST("reports/:imsi/:state", func(context *gin.Context) {
+			t:= context.Param("imsi") + context.Param("state")
+			context.JSON(200,  t)
+		})
 	}
 
-	s.gin = r
+	//s.gin = r
+
+	s.httpServer = &http.Server{
+		Addr: port,
+		Handler: router,
+	}
+
+
 
 	s.wg.Add(1)
 
@@ -64,8 +78,8 @@ func NewServer(storage DBStorage, port string) (*Server, error)  {
 
 			s.log.Info("start go")
 
-			err := r.Run(fmt.Sprintf(":%v", s.port))
-			if err != nil{
+			//err := r.Run(fmt.Sprintf(":%v", s.port))
+			if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				s.log.WithError(err).Error("failed to start")
 			}
 		}
@@ -76,11 +90,16 @@ func NewServer(storage DBStorage, port string) (*Server, error)  {
 	return s, nil
 }
 
-//func (s *Server) Stop()  {
-//	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
-//	defer cancel()
-//
-//	close(s.stop)
-//
-//	err := s.gin.Run()
-//}
+func (s *Server) Stop()  {
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	defer cancel()
+
+	close(s.stop)
+
+	err := s.httpServer.Shutdown(ctx)
+	if err != nil{
+		s.log.WithError(err).Error("failed graceful shutdown")
+	}
+
+	s.wg.Wait()
+}
