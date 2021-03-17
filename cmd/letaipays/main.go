@@ -4,8 +4,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"letaipays/api"
 
-	//"gopkg.in/bieber/barcode.v0"
-	"letaipays/pkg/barcode"
+	"gopkg.in/bieber/barcode.v0"
+	//"letaipays/pkg/barcode"
 	"letaipays/config"
 	"letaipays/pg"
 	"letaipays/tgbot"

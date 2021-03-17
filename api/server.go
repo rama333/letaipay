@@ -13,6 +13,7 @@ import (
 type DBStorage interface {
 	UpdateStateIMSI(imsi string, state int) (err error)
 	GetAllData() (u []entity.DataAll, err error)
+	GetImsi(imsi string) (u entity.Imsi, err error)
 
 }
 

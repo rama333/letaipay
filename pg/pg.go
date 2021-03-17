@@ -77,6 +77,7 @@ func (s *Storage) AddUserCity(userId int,city string) (error)  {
 
 func (s *Storage) UpdateStateIMSI(imsi string, state int) (err error) {
 	_, err = s.db.Exec("update data_imsi set state =$1 where imsi=$2", state, imsi)
+
 	return
 }
 
