@@ -11,15 +11,9 @@ import (
 )
 
 type DBStorage interface {
-	AddUserFullName(user_id int, fullname string) error
-	AddUserNumberGph(user_id int, numberGph string) error
-	AddUserNameDealer(user_id int, nameDealer string) error
-	GetUser(user_id int) (u entity.User, err error)
-	AddImsi(userId int, imsi string) error
-	GetImsi(imsi string) (u entity.Imsi, err error)
-	AddUserCity(userId int,city string) (error)
+	UpdateStateIMSI(imsi string, state int) (err error)
 	GetAllData() (u []entity.DataAll, err error)
-	GetAllDataWithUser(userId int) (u []entity.DataAll, err error)
+
 }
 
 type Server struct {
@@ -49,20 +43,13 @@ func NewServer(storage DBStorage, port string) (*Server, error)  {
 	routerGroupv1 := router.Group("api/v1")
 	{
 		routerGroupv1.GET("reports", s.GetReports)
-		routerGroupv1.POST("reports/:imsi/:state", func(context *gin.Context) {
-			t:= context.Param("imsi") + context.Param("state")
-			context.JSON(200,  t)
-		})
+		routerGroupv1.POST("reports/:imsi/:state", s.UpdateStateIMSI)
 	}
-
-	//s.gin = r
 
 	s.httpServer = &http.Server{
 		Addr: port,
 		Handler: router,
 	}
-
-
 
 	s.wg.Add(1)
 
@@ -81,6 +68,7 @@ func NewServer(storage DBStorage, port string) (*Server, error)  {
 			//err := r.Run(fmt.Sprintf(":%v", s.port))
 			if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				s.log.WithError(err).Error("failed to start")
+				time.Sleep(1*time.Second)
 			}
 		}
 

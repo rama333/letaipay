@@ -75,6 +75,11 @@ func (s *Storage) AddUserCity(userId int,city string) (error)  {
 	return err
 }
 
+func (s *Storage) UpdateStateIMSI(imsi string, state int) (err error) {
+	_, err = s.db.Exec("update data_imsi set state =$1 where imsi=$2", state, imsi)
+	return
+}
+
 func (s * Storage) GetUser(user_id int) (u entity.User, err error) {
 	err = s.db.QueryRowx(`select * from users where user_id = $1`, user_id).StructScan(&u)
 

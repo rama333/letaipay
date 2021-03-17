@@ -38,7 +38,7 @@ func main() {
 	defer db.Close()
 
 
-	server, err := api.NewServer(db, "7090")
+	server, err := api.NewServer(db, ":7090")
 
 	if err != nil{
 		logrus.Panic(err)
