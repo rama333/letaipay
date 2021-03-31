@@ -1,10 +1,12 @@
 package tgbot
 
 import (
+	"bufio"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	tgbotapi "github.com/Syfaro/telegram-bot-api"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -46,6 +48,7 @@ type DBStorage interface {
     AddUserCity(userId int,city string) (error)
 	GetAllData() (u []entity.DataAll, err error)
 	GetAllDataWithUser(userId int) (u []entity.DataAll, err error)
+	UpdateStateIMSI(imsi string, state int) (err error)
 }
 
 type Tgbot struct {
@@ -81,7 +84,7 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 		}
 
 		s.log.Info("fkjewnfwef")
-		logrus.Info("dvsdvs")
+
 
 		user, err := dbstorage.GetUser(update.Message.From.ID)
 
@@ -260,6 +263,68 @@ func NewBot(token string, dbstorage DBStorage, imagescanner *barcode.ImageScanne
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text+" - успешно добавлен")
 			msg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(msg)
+		}
+
+		if update.Message.Document != nil && user.Type != 0 {
+			if update.Message.Document.MimeType != "text/plain" {
+				continue
+			}
+
+			s.log.Info(update.Message.Document.FileName)
+			s.log.Info(update.Message.Document.FileID)
+
+			resp, err := bot.GetFile(tgbotapi.FileConfig{update.Message.Document.FileID})
+			if err != nil {
+				logrus.Info(err)
+				continue
+			}
+
+			logrus.Info(resp.FilePath)
+
+			req, err := http.Get("https://api.telegram.org/file/bot" + token + "/" + resp.FilePath)
+			logrus.Info("https://api.telegram.org/file/bot" + token + "/" + resp.FilePath + "/")
+
+			if err != nil {
+				logrus.Info(err)
+				continue
+			}
+
+			defer req.Body.Close()
+
+			file, err := os.Create(filepath.Join( "../../data/imsi",fmt.Sprintf("%d", time.Now().Unix()) + "imsis.txt"))
+			if err != nil{
+				s.log.Info(err)
+			}
+
+			defer file.Close()
+
+			defer io.Copy(file, req.Body)
+
+
+			input := bufio.NewScanner(req.Body)
+
+			//s.log.Info(input)
+
+
+			for input.Scan() {
+				s.log.Info(input.Text())
+
+				err := s.dbstorage.UpdateStateIMSI(input.Text(), 1)
+
+				if err != nil{
+					s.log.Info(err)
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка")
+					bot.Send(msg)
+					continue
+				}
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Успешно")
+			bot.Send(msg)
+
+			continue
+
+
 		}
 
 
